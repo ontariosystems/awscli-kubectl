@@ -2,7 +2,7 @@ name: Docker
 
 on:
   push:
-    tags: [ 'v*.*' ]
+    tags: [ 'v*.*.*' ]
   workflow_dispatch:
 
 env:
@@ -42,7 +42,7 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=match,pattern=v(\d+\.\d+\.\d+),group=1
+            type=semver,pattern={{version}}
       # Build and push Docker image with Buildx (don't push on PR)
       # https://github.com/docker/build-push-action
       - name: Build and push Docker image
