@@ -1,42 +1,52 @@
+# Builds AWS CLI v2 from source on alpine with musl (instead of glibc)
+#
+# based on these comments in aws-cli issue
+# https://github.com/aws/aws-cli/issues/4685#issuecomment-829600284
+# https://github.com/aws/aws-cli/issues/4685#issuecomment-1094307056
+FROM python:3.10-alpine as installer
+
+RUN set -ex; \
+    apk add --no-cache \
+    git unzip groff \
+    build-base libffi-dev cmake
+
+ARG AWS_CLI_VERSION=2.7.27
+
+RUN echo "nameserver 1.1.1.1" > /etc/resolv.conf || true; \
+    set -eux; \
+    mkdir /aws; \
+    git clone --single-branch --depth 1 -b ${AWS_CLI_VERSION} https://github.com/aws/aws-cli.git /aws; \
+    cd /aws; \
+    sed -i'' 's/PyInstaller.*/PyInstaller==4.10/g' requirements-build.txt; \
+    python -m venv venv; \
+    . venv/bin/activate; \
+    ./scripts/installers/make-exe
+
+RUN set -ex; \
+    unzip /aws/dist/awscli-exe.zip; \
+    ./aws/install --bin-dir /aws-cli-bin; \
+    /aws-cli-bin/aws --version
+
 FROM alpine:3.16
 
 # set some defaults
 ENV AWS_DEFAULT_REGION "us-east-1"
 ENV KUBECTL_VER=v0.23.10
-# https://github.com/sgerrand/alpine-pkg-glibc/releases
-ENV GLIBC_VER=2.33-r0
-
 
 RUN apk --no-cache upgrade
-RUN apk add --update bash ca-certificates git python3 jq
+RUN apk --no-cache add --update bash ca-certificates git groff python3 jq
 
-# install glibc compatibility for alpine and aws-cli v2
-# https://github.com/aws/aws-cli/issues/4685#issuecomment-615872019
 RUN apk --no-cache add \
         binutils \
         curl \
-    && curl -sL https://alpine-pkgs.sgerrand.com/sgerrand.rsa.pub -o /etc/apk/keys/sgerrand.rsa.pub \
-    && curl -sLO https://github.com/sgerrand/alpine-pkg-glibc/releases/download/${GLIBC_VER}/glibc-${GLIBC_VER}.apk \
-    && curl -sLO https://github.com/sgerrand/alpine-pkg-glibc/releases/download/${GLIBC_VER}/glibc-bin-${GLIBC_VER}.apk \
-    && apk add --no-cache \
-        glibc-${GLIBC_VER}.apk \
-        glibc-bin-${GLIBC_VER}.apk \
-    && curl -sL https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip -o awscliv2.zip \
-    && unzip awscliv2.zip \
-    && aws/install \
-    && rm -rf \
-        awscliv2.zip \
-        aws \
-        /usr/local/aws-cli/v2/*/dist/aws_completer \
-        /usr/local/aws-cli/v2/*/dist/awscli/data/ac.index \
-        /usr/local/aws-cli/v2/*/dist/awscli/examples \
     && curl -L "https://dl.k8s.io/release/${KUBECTL_VER}/bin/linux/amd64/kubectl" -o /usr/local/bin/kubectl \
     && chmod +x /usr/local/bin/kubectl \
     && apk --no-cache del \
         binutils \
         curl \
-    && rm glibc-${GLIBC_VER}.apk \
-    && rm glibc-bin-${GLIBC_VER}.apk \
     && rm -rf /var/cache/apk/*
+
+COPY --from=installer /usr/local/aws-cli/ /usr/local/aws-cli/
+COPY --from=installer /aws-cli-bin/ /usr/local/bin/
 
 CMD bash
