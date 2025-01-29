@@ -3,14 +3,14 @@
 # based on these comments in aws-cli issue
 # https://github.com/aws/aws-cli/issues/4685#issuecomment-829600284
 # https://github.com/aws/aws-cli/issues/4685#issuecomment-1094307056
-FROM python:3.10-alpine as installer
+FROM python:3.13-alpine as installer
 
 RUN set -ex; \
     apk add --no-cache \
     git unzip groff \
     build-base libffi-dev cmake
 
-ARG AWS_CLI_VERSION=2.7.27
+ARG AWS_CLI_VERSION=2.23.8
 
 RUN echo "nameserver 1.1.1.1" > /etc/resolv.conf || true; \
     set -eux; \
@@ -31,7 +31,7 @@ FROM alpine:3.16
 
 # set some defaults
 ENV AWS_DEFAULT_REGION "us-east-1"
-ENV KUBECTL_VER=v1.23.10
+ENV KUBECTL_VER=v1.31.5
 
 RUN apk --no-cache upgrade
 RUN apk --no-cache add --update bash ca-certificates git groff python3 jq
