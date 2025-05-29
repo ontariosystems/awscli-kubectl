@@ -27,11 +27,11 @@
 #    ./aws/install --bin-dir /aws-cli-bin; \
 #    /aws-cli-bin/aws --version
 
-FROM alpine:3.16
+FROM alpine:3.21
 
 # set some defaults
 ENV AWS_DEFAULT_REGION "us-east-1"
-ENV KUBECTL_VER=v1.31.5
+ENV KUBECTL_VER=v1.32.5
 
 RUN apk --no-cache upgrade
 RUN apk --no-cache add --update bash ca-certificates git groff python3 jq aws-cli
