@@ -2,7 +2,7 @@ FROM alpine:3.22
 
 # set some defaults
 ENV AWS_DEFAULT_REGION="us-east-1"
-ENV KUBECTL_VER=v1.34.6
+ENV KUBECTL_VER=v1.35.3
 
 RUN apk --no-cache upgrade
 RUN apk --no-cache add --update bash ca-certificates git groff python3 jq aws-cli
